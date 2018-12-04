@@ -18,6 +18,8 @@ class Trainer(object):
         self.sess = sess
         stats = {'cumulative_reward': [], 'episode_length': [], 'value_estimate': [],
                  'entropy': [], 'value_loss': [], 'policy_loss': [], 'learning_rate': [], 'action_norm':[]}
+        self.histogram_stats = {'action_trans' : [], 'action_xrotate' : [],'action_zrotate' : []}
+        
         self.stats = stats
 
         self.training_buffer = vectorize_history(empty_local_history({}))
@@ -54,6 +56,10 @@ class Trainer(object):
        self.stats['learning_rate'].append(learn_rate)
        action_norm = np.linalg.norm(actions, axis=1)
        self.stats['action_norm'].append(action_norm)
+       self.histogram_stats['action_trans'].append(actions[:,2])
+       self.histogram_stats['action_xrotate'].append(actions[:,0])
+       self.histogram_stats['action_zrotate'].append(actions[:,1])
+#        self.stats['action_trans'].append(actions[:,2])
        new_info = env.step(actions, value={brain_name: value})[brain_name]
        new_info.rewards = np.array(new_info.rewards) - 0.001 * action_norm
        new_info.rewards = new_info.rewards.tolist()
@@ -172,5 +178,8 @@ class Trainer(object):
                 stat_mean = float(np.mean(self.stats[key]))
                 summary.value.add(tag='Info/{}'.format(key), simple_value=stat_mean)
                 self.stats[key] = []
+#         for key in self.histogram_stats:
+#             if len(self.histogram_stats[key]) > 0:
+#                 summary.histogram(name='Info/{}'.format(key), values= np.concatenate(self.histogram_stats[key]))
         summary_writer.add_summary(summary, steps)
         summary_writer.flush()
